@@ -127,7 +127,7 @@ types.ts
 ### Installation
 
 ```bash
-git clone https://github.com/yourusername/champions-gambit.git
+git clone https://github.com/Paradivus/champions-gambit.git
 cd champions-gambit
 npm install
 ```
