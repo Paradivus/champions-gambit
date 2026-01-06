@@ -1,6 +1,6 @@
 <div align="center">
   
-# 🎮 Champion’s Gambit
+# [Champion’s Gambit](https://champions-gambit.netlify.app/)
 
 **Champion’s Gambit** is a polished, Pokémon-themed chess game built with React and TypeScript.  
 It combines the deterministic strategy of classic chess with a Red vs Blue rivalry, custom AI opponents, and a carefully crafted game presentation.
