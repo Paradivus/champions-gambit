@@ -1,0 +1,5 @@
+{
+  "name": "Champion's Gambit",
+  "description": "A Pokémon-themed Chess game featuring a nostalgic Red vs Blue aesthetic, progressive trainer difficulty levels powered by Stockfish, and a polished retro UX.",
+  "requestFramePermissions": []
+}

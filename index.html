@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+    <title>Champion's Gambit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              'retro': ['"Press Start 2P"', 'cursive'],
+              'sans': ['Inter', 'sans-serif'],
+            },
+            colors: {
+              'poke-red': '#DD2D4A',
+              'poke-blue': '#2D7DDD',
+              'poke-yellow': '#FFCC00',
+              'board-light': '#F0D9B5',
+              'board-dark': '#B58863',
+            },
+            animation: {
+              'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'float': 'float 3s ease-in-out infinite',
+              'pulse-slow': 'pulse 3s infinite',
+              'evolve': 'evolve 1.5s ease-in-out infinite',
+              'evolve-flash': 'evolveFlash 1s ease-out forwards',
+              'capture': 'capture 0.6s ease-in-out forwards',
+            },
+            keyframes: {
+              fadeIn: {
+                '0%': { opacity: '0' },
+                '100%': { opacity: '1' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-5px)' },
+              },
+              evolve: {
+                '0%, 100%': { transform: 'scale(1)', filter: 'brightness(1)' },
+                '50%': { transform: 'scale(1.05)', filter: 'brightness(1.2)' },
+              },
+              evolveFlash: {
+                '0%': { filter: 'brightness(1)' },
+                '25%': { filter: 'brightness(3) sepia(100%)' },
+                '100%': { filter: 'brightness(1)' },
+              },
+              capture: {
+                 '0%': { transform: 'scale(1)', opacity: '1' },
+                 '30%': { transform: 'scale(1.15)' },
+                 '100%': { transform: 'scale(0)', opacity: '0' }
+              }
+            }
+          },
+        },
+      }
+    </script>
+    <style>
+      body {
+        margin: 0;
+        background-color: #111;
+        overflow: hidden; 
+        user-select: none;
+        -webkit-user-select: none;
+        height: 100dvh; /* Dynamic Viewport Height for mobile stability */
+        width: 100vw;
+      }
+      
+      /* Custom Scrollbar for Webkit */
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #1f2937; }
+      ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
+      ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+      .arrow-layer { pointer-events: none; position: absolute; inset: 0; z-index: 20; }
+      
+      /* Utilities */
+      .blink-caret:after {
+        content: '_';
+        animation: blink 1s step-end infinite;
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@heroicons/react/": "https://esm.sh/@heroicons/react@^2.2.0/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "chess.js": "https://esm.sh/chess.js@^1.4.0",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root" class="h-full w-full"></div>
+    <script type="module" src="./index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
