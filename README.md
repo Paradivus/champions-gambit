@@ -106,16 +106,15 @@ It combines the deterministic strategy of classic chess with a Red vs Blue rival
 ## 📁 Project Structure
 
 ```
-champions-gambit/
-├── app/                # Screens and menus
-├── board/              # Chessboard and piece rendering
-├── engine/             # Chess rules and game state
-├── ai/                 # Stockfish integration and trainer configs
-├── audio/              # Audio manager and sound logic
-├── assets/             # Sprites, music, and sound effects
-├── types.ts            # Shared TypeScript types
-├── App.tsx             # Application root
-└── ...config files
+components/
+  ├─ IntroSequence.tsx
+  ├─ ChessBoard.tsx
+services/
+  ├─ engine.ts
+  ├─ audio.ts
+constants.ts
+types.ts
+
 ```
 
 ---
