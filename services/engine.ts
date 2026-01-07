@@ -1,12 +1,13 @@
+
 import { StockfishConfig } from "../types";
 
-// Public CDN for Stockfish.js (WASM based if supported, or asm.js fallback)
 const STOCKFISH_URL = 'https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.0/stockfish.js';
 
 class Engine {
   private worker: Worker | null = null;
   private isReady: boolean = false;
   private onMove: (from: string, to: string, promotion?: string) => void;
+  private messageQueue: string[] = [];
 
   constructor(onMove: (from: string, to: string, promotion?: string) => void) {
     this.onMove = onMove;
@@ -14,8 +15,8 @@ class Engine {
 
   async init() {
     try {
-      // Create a blob to load the external script to avoid strict CORS issues sometimes seen with direct worker creation
       const response = await fetch(STOCKFISH_URL);
+      if (!response.ok) throw new Error("Network response was not ok");
       const scriptContent = await response.text();
       const blob = new Blob([scriptContent], { type: 'application/javascript' });
       const url = URL.createObjectURL(blob);
@@ -26,10 +27,12 @@ class Engine {
         const msg = e.data;
         if (msg === 'uciok') {
           this.isReady = true;
+          this.processQueue();
+        } else if (msg === 'readyok') {
+            this.isReady = true;
         } else if (msg.startsWith('bestmove')) {
-          // Format: bestmove e2e4 ponder ...
           const moveData = msg.split(' ')[1];
-          if (moveData) {
+          if (moveData && moveData !== '(none)') {
             const from = moveData.substring(0, 2);
             const to = moveData.substring(2, 4);
             const promotion = moveData.length > 4 ? moveData.substring(4, 5) : undefined;
@@ -38,36 +41,59 @@ class Engine {
         }
       };
 
-      this.worker.postMessage('uci');
-      this.worker.postMessage('isready');
+      this.postMessage('uci');
+      setTimeout(() => {
+          if (!this.isReady) {
+              this.postMessage('isready');
+          }
+      }, 1000);
     } catch (err) {
       console.error("Failed to load Stockfish", err);
     }
   }
 
+  private postMessage(msg: string) {
+      if (this.worker) {
+          this.worker.postMessage(msg);
+      } else {
+          this.messageQueue.push(msg);
+      }
+  }
+
+  private processQueue() {
+      if (!this.worker || !this.isReady) return;
+      
+      while (this.messageQueue.length > 0) {
+          const msg = this.messageQueue.shift();
+          if (msg) this.worker.postMessage(msg);
+      }
+  }
+
   configure(config: StockfishConfig) {
-    if (!this.worker) return;
+    this.postMessage('ucinewgame');
     
-    // Set Skill Level
-    this.worker.postMessage(`setoption name Skill Level value ${config.skillLevel}`);
-    // Clear hash to avoid using memory from previous games
-    this.worker.postMessage('ucinewgame');
-    this.worker.postMessage('isready');
+    if (config.uciElo) {
+        this.postMessage('setoption name UCI_LimitStrength value true');
+        this.postMessage(`setoption name UCI_Elo value ${config.uciElo}`);
+    } else {
+        this.postMessage('setoption name UCI_LimitStrength value false');
+        if (config.skillLevel !== undefined) {
+             this.postMessage(`setoption name Skill Level value ${config.skillLevel}`);
+        }
+    }
+    
+    this.postMessage('isready');
   }
 
   evaluate(fen: string, config: StockfishConfig) {
-    if (!this.worker || !this.isReady) return;
-
-    this.worker.postMessage(`position fen ${fen}`);
+    this.postMessage(`position fen ${fen}`);
     
-    const depthParam = config.depth ? `depth ${config.depth}` : '';
-    const timeParam = config.moveTime ? `movetime ${config.moveTime}` : '';
-    
-    // If specific depth is set use it, otherwise use time
-    if (config.depth) {
-       this.worker.postMessage(`go ${depthParam}`);
+    if (config.nodes) {
+         this.postMessage(`go nodes ${config.nodes}`);
+    } else if (config.depth) {
+         this.postMessage(`go depth ${config.depth}`);
     } else {
-       this.worker.postMessage(`go ${timeParam}`);
+         this.postMessage(`go movetime ${config.moveTime || 1000}`);
     }
   }
 
@@ -75,6 +101,8 @@ class Engine {
     if (this.worker) {
       this.worker.terminate();
       this.worker = null;
+      this.isReady = false;
+      this.messageQueue = [];
     }
   }
 }

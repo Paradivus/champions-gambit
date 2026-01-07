@@ -1,3 +1,4 @@
+
 import { SOUNDS } from "../constants";
 import { AudioSettings } from "../types";
 
@@ -10,9 +11,11 @@ export class AudioManager {
     muted: false 
   };
   private musicAudio: HTMLAudioElement | null = null;
+  private checkAudio: HTMLAudioElement | null = null;
   private currentMusicUrl: string | null = null;
   private contextResumed = false;
   private isDucking = false;
+  private isInCheck = false;
   private duckTimeout: any = null;
 
   private constructor() {}
@@ -24,7 +27,6 @@ export class AudioManager {
     return AudioManager.instance;
   }
 
-  // Call this on user interaction to unlock AudioContext if needed (browser policy)
   resumeContext() {
     if (this.contextResumed) return;
 
@@ -34,7 +36,6 @@ export class AudioManager {
             .catch(() => {});
     }
     
-    // Create a dummy audio to unlock the engine on iOS/Android
     const dummy = new Audio('');
     dummy.play().catch(() => {});
   }
@@ -46,18 +47,25 @@ export class AudioManager {
 
   private applyVolume() {
     let effectiveMusicVol = this.settings.muted ? 0 : this.settings.masterVolume * this.settings.musicVolume;
-    
-    if (this.isDucking) {
-        effectiveMusicVol *= 0.3; // Duck to 30% volume
+    let effectiveSfxVol = this.settings.muted ? 0 : this.settings.masterVolume * this.settings.sfxVolume;
+
+    if (this.isInCheck) {
+        effectiveMusicVol = 0;
+    } else if (this.isDucking) {
+        effectiveMusicVol *= 0.3;
     }
 
     if (this.musicAudio) {
       this.musicAudio.volume = Math.min(effectiveMusicVol, 1.0);
     }
+    
+    if (this.checkAudio) {
+      this.checkAudio.volume = Math.min(effectiveSfxVol, 1.0);
+    }
   }
 
   private duckMusic(durationMs: number = 1500) {
-      if (this.settings.muted) return;
+      if (this.settings.muted || this.isInCheck) return;
       
       this.isDucking = true;
       this.applyVolume();
@@ -73,25 +81,66 @@ export class AudioManager {
   playSfx(key: keyof typeof SOUNDS) {
     if (this.settings.muted) return;
     
+    if (key === 'CHECK') return; 
+
     let effectiveSfxVol = this.settings.masterVolume * this.settings.sfxVolume;
     
-    // Apply special balancing
     if (key === 'CAPTURE') {
-        effectiveSfxVol *= 2.5; // Boost capture sound significantly (approx 2x previous)
+        effectiveSfxVol *= 2.5;
     } else if (key === 'EVOLVE') {
-        effectiveSfxVol *= 0.75; // Lower evolve sound
+        effectiveSfxVol *= 0.75;
     }
 
     if (effectiveSfxVol <= 0) return;
 
-    // Trigger ducking
     this.duckMusic(key === 'CAPTURE' ? 1000 : 2000);
 
     const url = SOUNDS[key];
     const audio = new Audio(url);
-    // Ensure volume doesn't exceed 1.0
+    
     audio.volume = Math.min(effectiveSfxVol, 1.0);
     audio.play().catch(e => console.warn("Audio play blocked", e));
+  }
+  
+  playCheckSound() {
+    if (this.settings.muted) return;
+    
+    if (this.isInCheck && this.checkAudio) return;
+    
+    this.isInCheck = true;
+    this.applyVolume();
+
+    if (this.checkAudio) {
+        this.checkAudio.pause();
+        this.checkAudio = null;
+    }
+
+    const url = SOUNDS.CHECK;
+    this.checkAudio = new Audio(url);
+    this.checkAudio.loop = true;
+    
+    let effectiveSfxVol = this.settings.masterVolume * this.settings.sfxVolume;
+    this.checkAudio.volume = Math.min(effectiveSfxVol, 1.0);
+    
+    this.checkAudio.play().catch(e => {
+        console.warn("Check audio play blocked", e);
+    });
+  }
+
+  stopCheckSound(restoreMusic = true) {
+    if (this.checkAudio) {
+        this.checkAudio.pause();
+        this.checkAudio.currentTime = 0;
+        this.checkAudio = null;
+    }
+    
+    if (restoreMusic && this.isInCheck) {
+        this.isInCheck = false;
+        this.applyVolume();
+    } else if (!restoreMusic) {
+    } else {
+        this.isInCheck = false;
+    }
   }
 
   playMusic(url: string, loop = true) {

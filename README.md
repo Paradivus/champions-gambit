@@ -1,6 +1,9 @@
+
 <div align="center">
   
-# [Champion’s Gambit](https://champions-gambit.netlify.app/)
+# 🎮 Champion’s Gambit
+
+**[Play the Demo](https://champions-gambit.netlify.app/)**
 
 **Champion’s Gambit** is a polished, Pokémon-themed chess game built with React and TypeScript.  
 It combines the deterministic strategy of classic chess with a Red vs Blue rivalry, custom AI opponents, and a carefully crafted game presentation.
@@ -106,15 +109,21 @@ It combines the deterministic strategy of classic chess with a Red vs Blue rival
 ## 📁 Project Structure
 
 ```
-components/
-  ├─ IntroSequence.tsx
-  ├─ ChessBoard.tsx
-services/
-  ├─ engine.ts
-  ├─ audio.ts
-constants.ts
-types.ts
-
+champions-gambit/
+├── index.html          # Entry HTML
+├── index.tsx           # Entry React logic
+├── App.tsx             # Main Application layout & state manager
+├── types.ts            # TypeScript interfaces and Enums
+├── constants.ts        # Game data (Lineups, Trainers, Assets, Sounds)
+├── components/
+│   ├── ChessBoard.tsx  # Core board rendering & interaction logic
+│   └── IntroSequence.tsx # Cinematic start screen
+├── services/
+│   ├── audio.ts        # Singleton Audio Manager
+│   └── engine.ts       # Stockfish Worker wrapper
+├── ai/
+│   └── botConfig.ts    # AI difficulty profiles
+└── vite.config.ts      # Build configuration
 ```
 
 ---
@@ -150,12 +159,22 @@ The optimized build will be generated in the `dist/` directory.
 
 ---
 
-## 🎯 What This Project Demonstrates
+## 👏 Credits & Acknowledgements
 
-- Clean separation of UI, game logic, and AI layers
-- Deterministic chess implementation with external engine integration
-- Progressive AI difficulty tuning
-- Polished UI/UX with coordinated animation and audio systems
+This project utilizes several open-source libraries and external assets.
+
+**Libraries & Tools**
+- **[chess.js](https://github.com/jhlywa/chess.js)**: Move validation, PGN generation, and game state management.
+- **[Stockfish.js](https://github.com/nmrugg/stockfish.js)**: The open-source chess engine compiled to WebAssembly.
+- **[Tailwind CSS](https://tailwindcss.com/)**: Utility-first CSS framework.
+- **[Heroicons](https://heroicons.com/)**: SVG icons.
+- **[Vite](https://vitejs.dev/)**: Frontend tooling.
+
+**Assets**
+- **[PokeAPI](https://pokeapi.co/)**: Pokémon sprite data.
+- **[Pokémon Showdown](https://play.pokemonshowdown.com/)**: Trainer sprite repository.
+- **[Mixkit](https://mixkit.co/)**: Royalty-free sound effects.
+- **[Google Fonts](https://fonts.google.com/)**: "Press Start 2P" and "Inter" fonts.
 
 ---
 

@@ -1,10 +1,11 @@
+
 export enum AppState {
   INTRO = 'INTRO',
   MENU = 'MENU',
   MODE_SELECT = 'MODE_SELECT',
-  SIDE_SELECT = 'SIDE_SELECT', // Only for Computer mode
+  SIDE_SELECT = 'SIDE_SELECT',
   TRAINER_SELECT = 'TRAINER_SELECT',
-  TRANSITION = 'TRANSITION', // For encounter animation
+  TRANSITION = 'TRANSITION',
   GAME = 'GAME',
 }
 
@@ -14,8 +15,8 @@ export enum GameMode {
 }
 
 export enum PlayerColor {
-  WHITE = 'w', // Red
-  BLACK = 'b', // Blue
+  WHITE = 'w',
+  BLACK = 'b',
 }
 
 export interface PokemonMapping {
@@ -34,9 +35,11 @@ export interface Lineup {
 }
 
 export interface StockfishConfig {
-  skillLevel: number; // 0-20
-  moveTime: number; // ms
-  depth: number | null; // null for max
+  skillLevel?: number;
+  uciElo?: number;
+  nodes?: number;
+  moveTime?: number;
+  depth?: number;
 }
 
 export interface Trainer {
@@ -58,9 +61,9 @@ export interface AppSettings {
 }
 
 export interface AudioSettings {
-  masterVolume: number; // 0-1
-  musicVolume: number; // 0-1
-  sfxVolume: number; // 0-1
+  masterVolume: number;
+  musicVolume: number;
+  sfxVolume: number;
   muted: boolean;
 }
 

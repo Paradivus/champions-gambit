@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { IntroSequence } from './components/IntroSequence';
 import { ChessBoard, ChessBoardRef } from './components/ChessBoard';
@@ -27,25 +28,21 @@ import {
 } from '@heroicons/react/24/solid';
 
 const App: React.FC = () => {
-  // Application State
   const [appState, setAppState] = useState<AppState>(AppState.INTRO);
   const [gameMode, setGameMode] = useState<GameMode>(GameMode.PASS_AND_PLAY);
   const [userColor, setUserColor] = useState<PlayerColor>(PlayerColor.WHITE);
   const [currentTurn, setCurrentTurn] = useState<PlayerColor>(PlayerColor.WHITE);
   
-  // Game Configuration
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | undefined>(undefined);
   const [winner, setWinner] = useState<PlayerColor | 'draw' | null>(null);
   const [gamePgn, setGamePgn] = useState<string>('');
   
-  // Board Control State
   const boardRef = useRef<ChessBoardRef>(null);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const logEndRef = useRef<HTMLDivElement>(null);
 
-  // Settings & Audio
   const [audioSettings, setAudioSettings] = useState<AudioSettings>({ 
     muted: false, 
     masterVolume: 0.5, 
@@ -61,11 +58,9 @@ const App: React.FC = () => {
     customBlueLineup: {}
   });
 
-  // Editor State
   const [editingLineupColor, setEditingLineupColor] = useState<PlayerColor | null>(null);
   const [editingPieceKey, setEditingPieceKey] = useState<keyof Lineup | null>(null);
 
-  // --- Audio Lifecycle ---
   useEffect(() => {
     const unlockAudio = () => AudioManager.getInstance().resumeContext();
     window.addEventListener('click', unlockAudio);
@@ -85,14 +80,11 @@ const App: React.FC = () => {
     AudioManager.getInstance().updateSettings(audioSettings);
   }, [audioSettings]);
 
-  // Auto scroll battle log
   useEffect(() => {
     if (logEndRef.current) {
         logEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [moveHistory]);
-
-  // --- Helper Methods ---
 
   const toggleMute = () => {
     setAudioSettings(prev => ({ ...prev, muted: !prev.muted }));
@@ -125,11 +117,9 @@ const App: React.FC = () => {
          const val = overrides[key];
          if (val) {
              if (typeof val === 'number') {
-                 // Pokémon ID
                  const name = POKEMON_NAMES_GEN1[val - 1] || `Poke #${val}`;
                  newLineup[key] = p(name, val);
              } else {
-                 // Trainer Sprite (String)
                  const avatar = PLAYER_AVATARS.find(a => a.sprite === val);
                  const name = avatar ? avatar.name : val;
                  newLineup[key] = {
@@ -156,16 +146,12 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // --- Logic for Rendering Game/Transition ---
-
-  // 1. Determine Lineups
   let redLineup = getCustomizedLineup(RED_LINEUP, appSettings.customRedLineup);
   let blueLineup = getCustomizedLineup(BLUE_LINEUP, appSettings.customBlueLineup);
 
   if (gameMode === GameMode.COMPUTER && selectedTrainer) {
       let trainerLineup = { ...selectedTrainer.lineup };
       
-      // Dynamic King Sprite for Champion
       if (selectedTrainer.id === 'champion') {
          const kingSprite = userColor === PlayerColor.WHITE ? 'blue' : 'red';
          const kingName = userColor === PlayerColor.WHITE ? 'Blue' : 'Red';
@@ -179,7 +165,6 @@ const App: React.FC = () => {
       }
   }
 
-  // 2. Identify Player Sprites for Transition
   const getUserSprite = () => {
       const customKing = userColor === PlayerColor.WHITE ? appSettings.customRedLineup.k : appSettings.customBlueLineup.k;
       if (typeof customKing === 'string') return getTrainerSprite(customKing);
@@ -193,22 +178,16 @@ const App: React.FC = () => {
         }
         return selectedTrainer.imgUrl;
       }
-      // Pass & Play P2
       const customKing = appSettings.customBlueLineup.k;
       if (typeof customKing === 'string') return getTrainerSprite(customKing);
       return getTrainerSprite('blue');
   }
 
-  // 3. Game Layout Logic (Flipping & Colors)
   const isFlipped = gameMode === GameMode.PASS_AND_PLAY 
         ? currentTurn === PlayerColor.BLACK
         : userColor === PlayerColor.BLACK;
 
-  // Determine who is visually Top and Bottom
   const getPlayerDisplayInfo = (position: 'top' | 'bottom') => {
-      // Logic for Pass & Play vs Computer
-      // Standard: White Bottom, Black Top.
-      // Flipped: White Top, Black Bottom.
       
       const isTopPosition = position === 'top';
       const isBottomPosition = position === 'bottom';
@@ -234,7 +213,6 @@ const App: React.FC = () => {
                  isActive: currentTurn === userColor
                };
           } else {
-               // Trainer
                let avatar = selectedTrainer.imgUrl;
                if (selectedTrainer.id === 'champion') {
                     avatar = getTrainerSprite(userColor === PlayerColor.WHITE ? 'blue' : 'red');
@@ -248,7 +226,6 @@ const App: React.FC = () => {
           }
       }
 
-      // Pass & Play
       if (isRedTeam) {
           return {
               name: appSettings.redName,
@@ -266,13 +243,10 @@ const App: React.FC = () => {
       }
   };
 
-  // --- Views ---
-
   if (appState === AppState.INTRO) {
     return <IntroSequence onComplete={() => setAppState(AppState.MENU)} />;
   }
 
-  // --- Settings Modal ---
   const renderSettingsModal = () => {
      const isRedTab = editingLineupColor !== PlayerColor.BLACK;
       
@@ -292,22 +266,41 @@ const App: React.FC = () => {
                     <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin bg-gray-900/50 rounded p-2">
                         {editingPieceKey === 'k' ? (
                             <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                {PLAYER_AVATARS.map((avatar) => (
-                                    <button 
-                                        key={avatar.sprite}
-                                        onClick={() => handlePieceChange(editingLineupColor!, editingPieceKey!, avatar.sprite)}
-                                        className="flex flex-col items-center p-3 rounded border border-gray-700 hover:bg-gray-800 hover:border-poke-yellow transition-all"
-                                    >
-                                        <img src={getTrainerSprite(avatar.sprite)} className="w-16 h-16 object-contain mb-2" />
-                                        <span className="text-[9px] text-gray-400 font-retro text-center">{avatar.name}</span>
-                                    </button>
-                                ))}
+                                {PLAYER_AVATARS.map((avatar) => {
+                                    const isTeamRestricted = (editingLineupColor === PlayerColor.WHITE) 
+                                        ? ['Blue', 'Gary'].includes(avatar.name) 
+                                        : ['Red', 'Ash'].includes(avatar.name);
+
+                                    const opponentKingId = editingLineupColor === PlayerColor.WHITE 
+                                        ? blueLineup.k.id 
+                                        : redLineup.k.id;
+                                    
+                                    const isUniqueRestricted = avatar.sprite === opponentKingId;
+
+                                    const isRestricted = isTeamRestricted || isUniqueRestricted;
+                                    
+                                    return (
+                                        <button 
+                                            key={avatar.sprite}
+                                            onClick={() => !isRestricted && handlePieceChange(editingLineupColor!, editingPieceKey!, avatar.sprite)}
+                                            disabled={isRestricted}
+                                            className={`flex flex-col items-center p-3 rounded border transition-all ${
+                                                isRestricted 
+                                                    ? 'border-gray-800 opacity-30 grayscale cursor-not-allowed' 
+                                                    : 'border-gray-700 hover:bg-gray-800 hover:border-poke-yellow'
+                                            }`}
+                                        >
+                                            <img src={getTrainerSprite(avatar.sprite)} className="w-16 h-16 object-contain mb-2" />
+                                            <span className="text-[9px] text-gray-400 font-retro text-center">{avatar.name}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
                                 {POKEMON_NAMES_GEN1.map((name, idx) => {
                                     const id = idx + 1;
-                                    const isUsed = isPokemonUsed(editingLineupColor!, id);
+                                    const isUsed = isPokemonUsedGlobal(id);
                                     return (
                                         <button 
                                             key={id}
@@ -425,7 +418,6 @@ const App: React.FC = () => {
       );
   };
 
-  // Helper helpers for settings
   const handlePieceChange = (color: PlayerColor, pieceKey: keyof Lineup, newId: number | string) => {
       const updater = color === PlayerColor.WHITE 
         ? (val: any) => setAppSettings(p => ({...p, customRedLineup: { ...p.customRedLineup, [pieceKey]: val }}))
@@ -435,34 +427,39 @@ const App: React.FC = () => {
       setEditingPieceKey(null);
   };
 
-  const isPokemonUsed = (color: PlayerColor, id: number | string) => {
+  const isPokemonUsedGlobal = (id: number | string) => {
       if (typeof id === 'string') return false; 
-      const overrides = color === PlayerColor.WHITE ? appSettings.customRedLineup : appSettings.customBlueLineup;
-      const base = color === PlayerColor.WHITE ? RED_LINEUP : BLUE_LINEUP;
       
-      const currentKeys = ['k','q','r','b','n','p'] as Array<keyof Lineup>;
-      for (const key of currentKeys) {
-          if (key === editingPieceKey) continue; 
-          const val = overrides[key];
-          const activeVal = val !== undefined ? val : base[key].id;
-          if (activeVal === id) return true;
+      for (const key of Object.keys(redLineup) as Array<keyof Lineup>) {
+          if (editingLineupColor === PlayerColor.WHITE && editingPieceKey === key) continue;
+          
+          if (redLineup[key].id === id) return true;
       }
+
+      for (const key of Object.keys(blueLineup) as Array<keyof Lineup>) {
+          if (editingLineupColor === PlayerColor.BLACK && editingPieceKey === key) continue;
+          
+          if (blueLineup[key].id === id) return true;
+      }
+      
       return false;
   };
 
-  // --- Main Menu ---
   if (appState === AppState.MENU) {
     return (
       <div className="h-full w-full bg-gray-900 flex flex-col items-center justify-center p-4 relative overflow-hidden">
         {showSettings && renderSettingsModal()}
         <div className="absolute inset-0 opacity-40 pointer-events-none">
             <div 
-                className="w-[200%] h-full absolute top-0 left-0 bg-repeat-x bg-cover animate-[scroll_60s_linear_infinite] scale-110 blur-sm"
-                style={{ backgroundImage: `url(${ASSETS.STADIUM_BG})` }}
+                className="w-[140%] h-full absolute top-0 -left-[20%] bg-cover blur-sm"
+                style={{ 
+                    backgroundImage: `url(${ASSETS.STADIUM_BG})`,
+                    animation: 'scroll 60s linear infinite alternate'
+                }}
             />
         </div>
         <div className="absolute inset-0 bg-black/40 pointer-events-none" />
-        <style>{`@keyframes scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }`}</style>
+        <style>{`@keyframes scroll { 0% { transform: translateX(-5%); } 100% { transform: translateX(5%); } }`}</style>
         
         <div className="z-10 flex flex-col items-center space-y-12 animate-fade-in w-full max-w-md">
            <h1 className="font-retro text-4xl md:text-5xl text-center leading-snug drop-shadow-xl select-none">
@@ -494,7 +491,6 @@ const App: React.FC = () => {
     );
   }
 
-  // --- Intermediate States ---
   if (appState === AppState.TRANSITION) {
       const p1Info = gameMode === GameMode.PASS_AND_PLAY 
          ? { name: appSettings.redName, avatar: typeof appSettings.customRedLineup.k === 'string' ? getTrainerSprite(appSettings.customRedLineup.k) : getTrainerSprite('red'), color: 'poke-red' }
@@ -601,29 +597,39 @@ const App: React.FC = () => {
             </div>
             <div className="flex-1 overflow-y-auto p-6">
                 <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {TRAINERS.map((trainer) => (
-                        <button 
-                            key={trainer.id}
-                            onClick={() => { setSelectedTrainer(trainer); AudioManager.getInstance().playSfx('CLICK'); startGameTransition(); }}
-                            className="bg-gray-800 border border-gray-700 hover:border-poke-yellow p-4 rounded flex items-center gap-4 group transition-all hover:bg-gray-750 text-left"
-                        >
-                            <div className="w-16 h-16 bg-gray-900 rounded-full border border-gray-600 overflow-hidden flex-shrink-0">
-                                <img src={trainer.imgUrl} className="w-full h-full object-cover" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-white font-retro text-xs group-hover:text-poke-yellow truncate">{trainer.name}</h3>
-                                <p className="text-[10px] text-poke-red font-bold mt-1">{trainer.difficultyLabel}</p>
-                                <p className="text-[10px] text-gray-400 mt-1 italic truncate">"{trainer.theme}"</p>
-                            </div>
-                        </button>
-                    ))}
+                    {TRAINERS.map((trainer) => {
+                        const isChampion = trainer.id === 'champion';
+                        let displayImg = trainer.imgUrl;
+                        if (isChampion) {
+                            displayImg = userColor === PlayerColor.WHITE ? getTrainerSprite('blue') : getTrainerSprite('red');
+                        }
+
+                        return (
+                            <button 
+                                key={trainer.id}
+                                onClick={() => { setSelectedTrainer(trainer); AudioManager.getInstance().playSfx('CLICK'); startGameTransition(); }}
+                                className="bg-gray-800 border border-gray-700 hover:border-poke-yellow p-4 rounded flex items-center gap-4 group transition-all hover:bg-gray-750 text-left"
+                            >
+                                <div className="w-16 h-16 bg-gray-900 rounded-full border border-gray-600 flex-shrink-0 flex items-center justify-center p-1">
+                                    <img 
+                                        src={displayImg} 
+                                        className={`w-full h-full object-contain ${isChampion ? 'brightness-0 drop-shadow-[0_0_2px_#fff]' : 'drop-shadow-lg'}`} 
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-white font-retro text-xs group-hover:text-poke-yellow truncate">{trainer.name}</h3>
+                                    <p className="text-[10px] text-poke-red font-bold mt-1">{trainer.difficultyLabel}</p>
+                                    <p className="text-[10px] text-gray-400 mt-1 italic truncate">"{trainer.theme}"</p>
+                                </div>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </div>
       );
   }
 
-  // --- GAME VIEW ---
   if (appState === AppState.GAME) {
       const topInfo = getPlayerDisplayInfo('top');
       const bottomInfo = getPlayerDisplayInfo('bottom');
@@ -633,9 +639,11 @@ const App: React.FC = () => {
                <div className={`${isLarge ? 'w-12 h-12 lg:w-16 lg:h-16' : 'w-8 h-8'} rounded-full bg-black overflow-hidden border border-gray-600`}>
                     <img src={info.avatar} className="w-full h-full object-cover" />
                </div>
-               <div className="flex flex-col">
-                   <span className="text-white font-retro text-[8px] lg:text-sm">{info.name}</span>
-                   <span className="text-gray-500 text-[8px] lg:text-[10px] uppercase font-bold">{info.teamColor === 'red' ? 'Red Team' : 'Blue Team'}</span>
+               <div className="flex-1 min-w-0">
+                   <div className="flex items-baseline justify-between">
+                       <span className="text-white font-retro text-[8px] lg:text-sm truncate mr-2">{info.name}</span>
+                       <span className="text-gray-500 text-[8px] lg:text-[10px] uppercase font-bold shrink-0">{info.teamColor === 'red' ? 'Red Team' : 'Blue Team'}</span>
+                   </div>
                </div>
           </div>
       );
@@ -670,22 +678,11 @@ const App: React.FC = () => {
 
              <div className="w-full h-full max-w-7xl flex flex-col lg:flex-row items-center justify-center gap-2 lg:gap-8">
                  
-                 {/* BOARD AREA */}
                  <div className="flex-1 h-full w-full max-w-[100vw] flex items-center justify-center relative lg:order-1">
-                      {/* Mobile Top Bar */}
                       <div className="lg:hidden absolute top-0 w-full z-10 p-1">
                           {renderPlayerCard(topInfo)}
                       </div>
 
-                      {/* 
-                         Board Container Logic:
-                         1. w-full: Take full width of parent.
-                         2. aspect-square: Force strict 1:1 ratio.
-                         3. max-w-[85vh]: Ensure width never forces height > 85% of screen (Desktop constraint).
-                         4. max-w-[95vw]: Ensure width never exceeds screen width (Mobile constraint).
-                         
-                         Since aspect-square links height to width, constraining width automatically constrains height.
-                      */}
                       <div className="w-full max-w-[95vw] lg:max-w-[85vh] aspect-square mx-auto">
                         <ChessBoard 
                             ref={boardRef}
@@ -704,14 +701,12 @@ const App: React.FC = () => {
                         />
                       </div>
 
-                      {/* Mobile Bottom Bar */}
                       <div className="lg:hidden absolute bottom-0 w-full z-10 p-1 flex flex-col gap-2">
                            {renderPlayerCard(bottomInfo)}
                            {renderControls()}
                       </div>
                  </div>
 
-                 {/* DESKTOP SIDEBAR */}
                  <div className="hidden lg:flex flex-col w-80 h-[85vh] justify-between bg-gray-800/20 p-6 rounded-xl border border-gray-700/50 backdrop-blur-sm lg:order-2">
                       <div className="space-y-4">
                           <h3 className="text-gray-400 font-retro text-xs text-center mb-4">OPPONENT</h3>
@@ -753,7 +748,6 @@ const App: React.FC = () => {
                  </div>
              </div>
 
-             {/* Victory Modal */}
              {winner && (
                  <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex flex-col items-center justify-center animate-fade-in p-6">
                       <h2 className="text-white font-retro text-2xl md:text-5xl mb-8 text-center animate-pulse text-poke-yellow leading-relaxed drop-shadow-lg mx-auto">

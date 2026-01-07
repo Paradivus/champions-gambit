@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import { Chess, Square, Move } from 'chess.js';
 import { Lineup, PlayerColor, Trainer, GameMode } from '../types';
@@ -47,7 +48,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
   const [game, setGame] = useState(new Chess());
   const gameRef = useRef(game);
   
-  // History Stack for Redo
   const [redoStack, setRedoStack] = useState<Move[]>([]);
 
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -55,24 +55,22 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
   const [lastMove, setLastMove] = useState<Move | null>(null);
   const [promotionPending, setPromotionPending] = useState<{from: Square, to: Square} | null>(null);
   
-  // Arrow / Interact State
   const [arrows, setArrows] = useState<Arrow[]>([]);
   const [drawingArrow, setDrawingArrow] = useState<Square | null>(null);
   const [markedSquares, setMarkedSquares] = useState<Square[]>([]);
 
-  // Visual Effects State
   const [effects, setEffects] = useState<BoardEffect[]>([]);
+
+  const gameOverHandled = useRef(false);
 
   const engineRef = useRef<Engine | null>(null);
   
-  // Update gameRef whenever game changes to ensure callbacks have latest state
   useEffect(() => {
     gameRef.current = game;
     if (onTurnChange) {
         onTurnChange(game.turn() as PlayerColor);
     }
     
-    // Notify parent of history state
     if (onHistoryChange) {
         const canUndo = mode === GameMode.COMPUTER 
             ? (game.turn() === userColor && game.history().length >= 2) 
@@ -81,13 +79,26 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
         onHistoryChange(canUndo, canRedo);
     }
 
-    // Notify parent of move list for Battle Log
     if (onBoardUpdate) {
         onBoardUpdate(game.history());
     }
+
   }, [game, redoStack, onTurnChange, onHistoryChange, onBoardUpdate, mode, userColor]);
+
+  useEffect(() => {
+    if (game.inCheck() && !game.isGameOver()) {
+        AudioManager.getInstance().playCheckSound();
+    } else {
+        AudioManager.getInstance().stopCheckSound();
+    }
+  }, [game]); 
   
-  // Determine if board is flipped
+  useEffect(() => {
+    return () => {
+        AudioManager.getInstance().stopCheckSound();
+    };
+  }, []);
+
   const isFlipped = useMemo(() => {
     if (mode === GameMode.PASS_AND_PLAY) {
       return game.turn() === 'b';
@@ -95,7 +106,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
     return userColor === PlayerColor.BLACK;
   }, [mode, userColor, game.turn()]);
 
-  // Initialize AI
   useEffect(() => {
     if (mode === GameMode.COMPUTER && trainer) {
       const engine = new Engine((from, to, promotion) => {
@@ -103,6 +113,11 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
       });
       engine.init().then(() => {
         engine.configure(trainer.aiConfig);
+        if (gameRef.current.turn() !== userColor) {
+             setTimeout(() => {
+                 engine.evaluate(gameRef.current.fen(), trainer.aiConfig);
+             }, 1000);
+        }
       });
       engineRef.current = engine;
       
@@ -110,25 +125,29 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
         engine.terminate();
       };
     }
-  }, [mode, trainer]);
+  }, [mode, trainer]); 
 
-  // Handle AI Turn
   useEffect(() => {
     if (mode === GameMode.COMPUTER && !game.isGameOver()) {
       const isUserTurn = game.turn() === userColor;
       if (!isUserTurn && engineRef.current) {
-        setTimeout(() => {
+        const timer = setTimeout(() => {
           engineRef.current?.evaluate(game.fen(), trainer!.aiConfig);
-        }, 800);
+        }, 2000);
+        return () => clearTimeout(timer);
       }
     }
   }, [game, mode, userColor, trainer]);
 
-  // Check game status
   useEffect(() => {
     if (game.isGameOver()) {
-      AudioManager.getInstance().stopMusic(); // Stop battle music
-      AudioManager.getInstance().playSfx('VICTORY');
+      if (gameOverHandled.current) return;
+      gameOverHandled.current = true;
+
+      AudioManager.getInstance().stopMusic();
+      AudioManager.getInstance().stopCheckSound();
+      
+      setTimeout(() => AudioManager.getInstance().playSfx('VICTORY'), 100);
       
       const pgn = game.pgn();
       
@@ -138,8 +157,8 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
       } else {
         onGameOver('draw', pgn);
       }
-    } else if (game.inCheck()) {
-      AudioManager.getInstance().playSfx('CHECK');
+    } else {
+        gameOverHandled.current = false;
     }
   }, [game, onGameOver]);
 
@@ -152,13 +171,11 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
       const id = Date.now() + Math.random();
       setEffects(prev => [...prev, { id, square, type, imageUrl }]);
       
-      // Cleanup effect after animation duration
       setTimeout(() => {
           setEffects(prev => prev.filter(e => e.id !== id));
       }, 1200); 
   };
 
-  // Helper to deep clone game state with history using PGN
   const cloneGameWithHistory = (sourceGame: Chess) => {
       const newGame = new Chess();
       newGame.loadPgn(sourceGame.pgn());
@@ -166,12 +183,10 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
   };
 
   const handleUndo = () => {
-      // Must access gameRef or game state. Using game state for direct interaction.
       if (game.history().length === 0) return;
 
       const tempGame = cloneGameWithHistory(game);
       
-      // Pass & Play: Undo 1 move
       if (mode === GameMode.PASS_AND_PLAY) {
           const undoneMove = tempGame.undo();
           if (undoneMove) {
@@ -181,16 +196,13 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
               AudioManager.getInstance().playSfx('MOVE');
           }
       } 
-      // VS Computer: Undo 2 moves (AI then User) to get back to user turn
       else if (mode === GameMode.COMPUTER) {
           if (game.turn() === userColor) {
-               // Undo AI Move
                const aiMove = tempGame.undo();
-               // Undo User Move
                const userMove = tempGame.undo();
                
                if (aiMove && userMove) {
-                   setRedoStack(prev => [...prev, aiMove, userMove]); // Push in reverse order of redo
+                   setRedoStack(prev => [...prev, aiMove, userMove]); 
                    setGame(tempGame);
                    setLastMove(tempGame.history({ verbose: true }).pop() || null);
                    AudioManager.getInstance().playSfx('MOVE');
@@ -205,7 +217,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
       const tempGame = cloneGameWithHistory(game);
       const movesToRedo = [...redoStack];
       
-      // Pass & Play: Redo 1 move
       if (mode === GameMode.PASS_AND_PLAY) {
           const move = movesToRedo.pop();
           if (move) {
@@ -216,7 +227,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
               AudioManager.getInstance().playSfx('MOVE');
           }
       }
-      // VS Computer: Redo 2 moves (User then AI)
       else if (mode === GameMode.COMPUTER) {
           const userMove = movesToRedo.pop();
           const aiMove = movesToRedo.pop();
@@ -233,7 +243,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
       }
   };
 
-  // Expose undo/redo to parent
   useImperativeHandle(ref, () => ({
     undo: handleUndo,
     redo: handleRedo
@@ -241,17 +250,13 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
 
   const makeMove = (from: Square, to: Square, promotion?: string) => {
     try {
-      // Crucial: Use cloneWithHistory from ref to ensure we don't lose history
-      // makeMove might be called from engine callback where 'game' closure is stale, so use gameRef
       const tempGame = cloneGameWithHistory(gameRef.current);
 
-      // Pre-calculation for capture effect
       const targetPiece = gameRef.current.get(to); 
       
       const moveConfig: any = { from, to };
       if (promotion) moveConfig.promotion = promotion;
       
-      // Determine if it is En Passant before the move
       const verboseMove = gameRef.current.moves({ verbose: true }).find(m => m.from === from && m.to === to && m.promotion === promotion);
       const isEnPassant = verboseMove?.flags.includes('e');
       
@@ -275,9 +280,8 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
         setValidMoves([]);
         setPromotionPending(null);
         setArrows([]); 
-        setMarkedSquares([]); // Clear marks on move
+        setMarkedSquares([]);
         
-        // Clear Redo Stack on new move
         setRedoStack([]);
         
         if (result.captured) {
@@ -332,7 +336,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
     }
   };
 
-  // Drag & Drop Handlers
   const onDragStart = (e: React.DragEvent, square: Square) => {
     if (mode === GameMode.COMPUTER && game.turn() !== userColor) {
         e.preventDefault();
@@ -445,7 +448,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
         ? { filter: 'sepia(0.3) hue-rotate(-50deg) saturate(1.5) drop-shadow(0 4px 2px rgba(0,0,0,0.3))' } 
         : { filter: 'sepia(0.3) hue-rotate(180deg) saturate(1.5) drop-shadow(0 4px 2px rgba(0,0,0,0.3))' };
 
-    // Active Effects
     const activeEvolve = effects.find(e => e.square === squareId && e.type === 'evolve');
     const activeCapture = effects.find(e => e.square === squareId && e.type === 'capture');
 
@@ -473,7 +475,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
         {isValidMove && !piece && <div className="absolute w-2 h-2 md:w-3 md:h-3 bg-black/20 rounded-full" />}
         {isValidMove && piece && <div className="absolute inset-0 border-4 border-black/20 rounded-sm" />}
         
-        {/* Render Piece */}
         {piece && pokemonAsset && (
             <div 
                 draggable={!game.isGameOver()}
@@ -495,7 +496,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
             </div>
         )}
 
-        {/* Capture Effect Overlay */}
         {activeCapture && activeCapture.imageUrl && (
             <div className="absolute inset-0 z-30 pointer-events-none animate-capture">
                  <img 
@@ -540,7 +540,6 @@ export const ChessBoard = forwardRef<ChessBoardRef, BoardProps>(({
                                 <button 
                                     key={type}
                                     onClick={() => {
-                                        // Trigger evolve immediately on click (logic handles the rest)
                                         makeMove(promotionPending.from, promotionPending.to, type);
                                     }}
                                     className="bg-gray-800 border-2 border-white hover:border-poke-yellow p-2 md:p-4 rounded flex flex-col items-center transition-all hover:scale-125 animate-evolve"

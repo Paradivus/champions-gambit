@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { AudioManager } from '../services/audio';
 
@@ -16,20 +17,13 @@ export const IntroSequence: React.FC<IntroProps> = ({ onComplete }) => {
   const [stage, setStage] = useState<IntroStage>(IntroStage.DISCLAIMER);
 
   useEffect(() => {
-    // Total Sequence: ~12s
-    
-    // 0s: Disclaimer Starts
-    
-    // 6.5s: Fade out disclaimer (Increased time for longer text)
     const timer1 = setTimeout(() => setStage(IntroStage.DISCLAIMER_FADE), 6500);
     
-    // 7.5s: Logo Starts
     const timer2 = setTimeout(() => setStage(IntroStage.LOGO_START), 7500);
 
-    // 13s: Logo Settled / Prompt to start
     const timer3 = setTimeout(() => {
         setStage(IntroStage.LOGO_SETTLED);
-        AudioManager.getInstance().playSfx('INTRO'); // Chime
+        AudioManager.getInstance().playSfx('INTRO');
     }, 13000);
 
     return () => {
@@ -40,10 +34,8 @@ export const IntroSequence: React.FC<IntroProps> = ({ onComplete }) => {
   }, []);
 
   const handleClick = () => {
-    // If we click, ensure audio system is awake
     AudioManager.getInstance().resumeContext();
 
-    // Allow skipping only if we are at least in logo stage or user wants to rush
     if (stage >= IntroStage.LOGO_START) {
         AudioManager.getInstance().playSfx('CLICK');
         onComplete();
@@ -55,7 +47,6 @@ export const IntroSequence: React.FC<IntroProps> = ({ onComplete }) => {
         onClick={handleClick}
         className="fixed inset-0 bg-black flex items-center justify-center z-50 cursor-pointer overflow-hidden"
     >
-      {/* DISCLAIMER SCREEN */}
       <div className={`absolute inset-0 flex flex-col items-center justify-center p-4 md:p-8 transition-opacity duration-1000 ${
           stage === IntroStage.DISCLAIMER ? 'opacity-100' : 'opacity-0 pointer-events-none'
       }`}>
@@ -86,14 +77,12 @@ export const IntroSequence: React.FC<IntroProps> = ({ onComplete }) => {
           </div>
       </div>
 
-      {/* LOGO SCREEN */}
       <div 
         className={`transition-all duration-1000 transform flex flex-col items-center ${
           stage >= IntroStage.LOGO_START ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
         }`}
       >
         <div className="relative">
-             {/* Background glow for logo */}
             <div className={`absolute -inset-10 bg-blue-500/20 blur-3xl rounded-full transition-opacity duration-2000 ${stage === IntroStage.LOGO_SETTLED ? 'opacity-100' : 'opacity-0'}`}></div>
             
             <h1 className="relative font-retro text-4xl md:text-6xl text-white text-center leading-snug tracking-wider drop-shadow-[4px_4px_0_rgba(0,0,0,1)]">

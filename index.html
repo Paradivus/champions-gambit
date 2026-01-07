@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -64,11 +65,10 @@
         overflow: hidden; 
         user-select: none;
         -webkit-user-select: none;
-        height: 100dvh; /* Dynamic Viewport Height for mobile stability */
+        height: 100dvh;
         width: 100vw;
       }
       
-      /* Custom Scrollbar for Webkit */
       ::-webkit-scrollbar { width: 6px; }
       ::-webkit-scrollbar-track { background: #1f2937; }
       ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 3px; }
@@ -76,7 +76,6 @@
 
       .arrow-layer { pointer-events: none; position: absolute; inset: 0; z-index: 20; }
       
-      /* Utilities */
       .blink-caret:after {
         content: '_';
         animation: blink 1s step-end infinite;
