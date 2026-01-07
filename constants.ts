@@ -166,12 +166,12 @@ export const getLineupForSide = (color: PlayerColor, trainer?: Trainer): Lineup 
 
 export const SOUNDS = {
   INTRO: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3', 
-  CLICK: 'https://cdn.discordapp.com/attachments/1423223829366308937/1458323022078414912/SPOILER_d3NqHOE.mp3?ex=695f38a6&is=695de726&hm=ab3822b54decfdb6b920f4dc58d4d2f67555875f1fe2c10693cedd48da688dec&', 
+  CLICK: 'https://assets-wig9hblnbo.edgeone.app/click.mp3', 
   MOVE: 'https://assets.mixkit.co/active_storage/sfx/2042/2042-preview.mp3', 
-  CHECK: 'https://cdn.discordapp.com/attachments/1423223829366308937/1458306391914840160/SPOILER_2nfTsmy.mp3?ex=695f2929&is=695dd7a9&hm=3d6f259a1e1c99916df39770b624f25adefbb504cfaa34ddce9f94130ef826b1&', 
-  BGM_MENU: 'https://cdn.discordapp.com/attachments/1261581754070728777/1458070515963920484/SPOILER_1o6XmyF.mp3?ex=695e4d7c&is=695cfbfc&hm=f3befc17778a4cabd6c5880de4ba7fe8ebbdabb8230ab51a5ce2e7c6cf2d182f&', 
-  BGM_ENCOUNTER: 'https://cdn.discordapp.com/attachments/1261581754070728777/1458075665621586014/SPOILER_vjFtIaW.mp3?ex=695e5248&is=695d00c8&hm=d46b262c17213fc3f8927d7d5bee8bec9385ed14c51b4392592763e9fe35c66b&',
-  CAPTURE: 'https://cdn.discordapp.com/attachments/1261581754070728777/1458085026800341044/SPOILER_ZPOoO4J.mp3?ex=695e5b00&is=695d0980&hm=bad5441bb325de162036fa43f28c1e57976e57debe70d1688202a76275f8fb4a&',
-  VICTORY: 'https://cdn.discordapp.com/attachments/1261581754070728777/1458087238075420798/SPOILER_WhQYAz6.mp3?ex=695e5d0f&is=695d0b8f&hm=3396e51c91903d4078f0fb87fdb369cac4cb34576dba88897cd88f27b204e2fa&',
-  EVOLVE: 'https://cdn.discordapp.com/attachments/1261581754070728777/1458085388374642768/SPOILER_dhAHYfU.mp3?ex=695e5b56&is=695d09d6&hm=98ec1d141acf1369c1e66e403849f4bc4ced9e4a4c9231d51bc9fbbb49ae802d&'
+  CHECK: 'http://assets-wig9hblnbo.edgeone.app/check.mp3', 
+  BGM_MENU: 'https://assets-wig9hblnbo.edgeone.app/bgm.mp3', 
+  BGM_ENCOUNTER: 'https://assets-wig9hblnbo.edgeone.app/encounter.mp3',
+  CAPTURE: 'https://assets-wig9hblnbo.edgeone.app/capture.mp3',
+  VICTORY: 'https://assets-wig9hblnbo.edgeone.app/victory.mp3',
+  EVOLVE: 'https://assets-wig9hblnbo.edgeone.app/evolution.mp3'
 };
